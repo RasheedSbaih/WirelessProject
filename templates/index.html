@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wireless Network Design Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    h1 { color: #333; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { padding: 8px; margin-top: 5px; width: 300px; }
+    #paramsContainer { margin-bottom: 20px; }
+    details { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-top: 20px; }
+    summary { font-weight: bold; cursor: pointer; }
+    pre { background: #f0f0f0; padding: 10px; border-radius: 5px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Wireless Network Design Calculator</h1>
+
+  <label for="scenario">Choose a scenario:</label>
+  <select id="scenario">
+    <option value="wireless-comm">Wireless Communication System</option>
+    <option value="ofdm">OFDM System</option>
+    <option value="link_budget">Link Budget</option>
+    <option value="cellular_design">Cellular Design</option>
+  </select>
+
+  <div id="paramsContainer"></div>
+
+  <button onclick="submitCalculation()">Calculate</button>
+
+  <details id="resultsBox" style="display:none;">
+    <summary>Calculation Results</summary>
+    <pre id="results"></pre>
+  </details>
+
+  <details id="explanationBox" style="display:none;">
+    <summary>AI Explanation</summary>
+    <pre id="explanation"></pre>
+  </details>
+
+  <script>
+    const paramTemplates = {
+      "wireless-comm": ["samplerRate", "quantizerBits", "sourceEncoderRate", "channelEncoderRate", "interleaverDepth", "burstLength"],
+      ofdm: ["numSubcarriers", "symbolDuration", "bitsPerSymbol", "numResourceBlocks", "bandwidth"],
+      link_budget: ["transmitPower_dBm", "transmitAntennaGain_dBi", "receiveAntennaGain_dBi", "frequency_GHz", "distance_km", "noiseFigure_dB", "bandwidth_Hz"],
+      cellular_design: ["numUsers", "avgUserDataRate_Mbps", "cellRadius_km", "frequencyBand_GHz", "maxTxPower_dBm", "minRxSensitivity_dBm"]
+    };
+
+    document.getElementById('scenario').addEventListener('change', renderParams);
+    renderParams();
+
+    function renderParams() {
+      const scenario = document.getElementById('scenario').value;
+      const container = document.getElementById('paramsContainer');
+      container.innerHTML = '';
+
+      paramTemplates[scenario].forEach(param => {
+        const label = document.createElement('label');
+        label.textContent = param;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = param;
+        input.placeholder = param;
+        container.appendChild(label);
+        container.appendChild(input);
+      });
+    }
+
+    async function submitCalculation() {
+      const scenario = document.getElementById('scenario').value;
+      const params = {};
+      paramTemplates[scenario].forEach(param => {
+        const val = parseFloat(document.getElementById(param).value);
+        if (!isNaN(val)) {
+          params[param] = val;
+        }
+      });
+
+      // Map scenario to correct API endpoint
+      const apiEndpoints = {
+        'wireless-comm': '/api/wireless-communication',
+        'ofdm': '/api/ofdm-systems',
+        'link_budget': '/api/link-budget',
+        'cellular_design': '/api/cellular-design'
+      };
+
+      const response = await fetch(apiEndpoints[scenario], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenario, parameters: params })
+      });
+
+      const resultBox = document.getElementById('resultsBox');
+      const explanationBox = document.getElementById('explanationBox');
+      const resultPre = document.getElementById('results');
+      const explanationPre = document.getElementById('explanation');
+
+      const data = await response.json();
+
+      if (response.ok) {
+        resultPre.textContent = JSON.stringify(data.calculations, null, 2);
+        explanationPre.textContent = data.explanation || 'No explanation available.';
+        resultBox.style.display = 'block';
+        explanationBox.style.display = data.explanation ? 'block' : 'none';
+      } else {
+        resultPre.textContent = `Error: ${data.error}`;
+        explanationPre.textContent = '';
+        resultBox.style.display = 'block';
+        explanationBox.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
