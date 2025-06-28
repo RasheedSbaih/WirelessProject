@@ -11,7 +11,8 @@ app = Flask(__name__, static_url_path='/static', static_folder='static', templat
 CORS(app)
 
 #OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_API_KEY="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"
+OPENROUTER_API_KEY="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"
+
 OPENROUTER_MODEL_ID="mistralai/mistral-7b-instruct"
 #OPENROUTER_MODEL_ID = os.getenv("OPENROUTER_MODEL_ID")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
